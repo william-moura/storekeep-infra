@@ -1,0 +1,66 @@
+version: '3.8'
+
+services:
+  # Servidor Web (Nginx)
+  webserver:
+    image: nginx:alpine
+    container_name: erp_nginx
+    restart: unless-stopped
+    ports:
+      - "8000:80"
+    volumes:
+      - ./storekeep-application:/var/www/html
+      - ./docker/frontend/default.conf:/etc/nginx/conf.d/default.conf
+    networks:
+      - erp-network
+
+  # Aplicação PHP (Laravel)
+  app:
+    build:
+      context: ./docker/backend
+      dockerfile: Dockerfile
+    container_name: erp_app
+    restart: unless-stopped
+    working_dir: /var/www/html
+    volumes:
+      - ./storekeep-application:/var/www/html
+    networks:
+      - erp-network
+    depends_on:
+      - db
+      - redis
+
+  # Banco de Dados
+  db:
+    image: mysql:8.0
+    container_name: erp_db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE:-erp_db}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-secret}
+      MYSQL_USER: ${DB_USERNAME:-erp_user}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-secret}
+    ports:
+      - "3306:3306"
+    volumes:
+      - dbdata:/var/lib/mysql
+    networks:
+      - erp-network
+
+  # Redis para Filas e Cache
+  redis:
+    image: redis:alpine
+    container_name: erp_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    networks:
+      - erp-network
+
+networks:
+  erp-network:
+    driver: bridge
+
+volumes:
+  dbdata:
+    driver: local
