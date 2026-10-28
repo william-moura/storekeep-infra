@@ -21,7 +21,12 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 # Definir diretório de trabalho
 WORKDIR /var/www/html
 
+
 COPY . .
 # Criar usuário para o container (boa prática de segurança)
-RUN useradd -u 1000 -ms /bin/bash www
-USER www
+# RUN useradd -u 1000 -ms /bin/bash www
+# USER www
+# # Cria a pasta e depois aplica a permissão de escrita
+# RUN mkdir -p /var/www/html/storage && chmod -R 775 /var/www/html/storage
+# RUN mkdir -p /var/www/html/vendor \
+#     && chown -R www-data:www-data /var/www/html
